@@ -8,7 +8,6 @@ import argparse
 
 import deploy
 import hosts
-import ec2
 
 parser = argparse.ArgumentParser()
 parser.add_argument("action",
@@ -23,7 +22,7 @@ args = parser.parse_args()
 
 
 if args.action == 'deploy':
-    deploy.node(args.number)
+    deploy.node(args.number, args.type)
 
 elif args.action == 'destroy':
     deploy.destroy_node(args.number)
@@ -31,7 +30,18 @@ elif args.action == 'destroy':
 elif args.action == 'push_aws':
     deploy.app()
 
-elif args.action == 'update':
+elif args.action == 'update-one':
+    ## Rewrite the hosts file to verify correctness
+    hosts.file_print()
+
+    ## Call to fabric to deploy necessary app code onto everyone
+    deploy.app(args.number)
+
+    ## Run state.highstate to bring everyone up to config status
+    call(['salt', '*', 'state.highstate'])
+
+
+elif args.action == 'update-all':
     ## Rewrite the hosts file to verify correctness
     hosts.file_print()
 

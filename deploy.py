@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-
 from subprocess import call
 from sys import exit
 import hosts
-import s_fabric
+import sfab
 
 
 def config(new_instance='*'):
@@ -13,17 +12,18 @@ def config(new_instance='*'):
 
 
 def app(target_instance=False):
-    sfab.aws(target_instance)
+     sfab.deploy(target_instance)
 
 
-def node(new_instance_num):
-    new_instance = "aws%s" % new_instance_num
-    print new_instance
+def node(new_instance_num, node_type='base_aws'):
+    node_dict = node_type.split('_')
+    new_instance = "%s%s.infra.opnreg.com" % (node_dict[1], new_instance_num)
 
     ## Create new instance
-    call(['salt-cloud', '-p', 'base_aws', new_instance])
+    call(['salt-cloud', '-p', node_type, new_instance])
     ## Rewrite Hosts File
-    hosts.file_write()
+    hosts.file_print()
+    hosts.local_print()
     ## Deploy Salt Configs
     config(new_instance)
     ## Call to fabric to deploy necessary app code onto new minion

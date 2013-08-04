@@ -8,12 +8,18 @@ def file_print():
     f.write(file_assemble())
     f.close()
 
+def local_print():
+    f = open('/etc/hosts', 'w')
+    f.write(file_assemble())
+    f.close()
+
 
 def file_assemble():
     hosts_head = """
 127.0.0.1\t\t\tlocalhost
-108.166.117.174\trs01\t\trs01.infra.opnreg.com
+108.166.117.174\trs01od\t\trs01.open-dance.net
 166.78.157.47\trs02\t\trs02.infra.opnreg.com
+166.78.191.177\trs03\t\trs03.infra.opnreg.com
 """
     hosts_body = ''
 

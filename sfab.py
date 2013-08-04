@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-from fabric.api import run, env, local, cd
+from fabric.api import run, env, cd, settings
 
-
-def aws(target_instance=False, branch='master'):
+def deploy(target, branch='master', force=False):
     env.user = 'root'
     env.forward_agent = True
-    if target_instance:
-        env.hosts = [target_instance]
 
-    with cd('/var/www'):
-#        run('git reset --hard origin/%s' % branch)
-        run('git pull root@rs01.open-dance.net:/home/webdev/open-dance.delta %s' % branch)
-        run('composer update')
+    with settings(host_string=target):
+        run('curl -sS https://getcomposer.org/installer | php -- --install-dir=/bin')
+        with cd('/var/www'):
+            if force:
+                run('git reset --hard origin/%s' % branch)
+            run('git pull root@rs01.open-dance.net:/home/webdev/open-dance.delta %s' % branch)
+            run('composer.phar update')
