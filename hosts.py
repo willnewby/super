@@ -2,10 +2,16 @@
 
 from boto import ec2
 
+def recreate():
+    print 'Rebuilding hosts files'
+    ## Rewrite ALL the Hosts Files
+    file_print('inside')
+    file_print('outside')
+    local_print()
 
-def file_print():
-    f = open('/srv/salt/hosts/hosts.file', 'w')
-    f.write(file_assemble())
+def file_print(locale):
+    f = open('/srv/salt/hosts/hosts.%s' % locale, 'w')
+    f.write(file_assemble(locale))
     f.close()
 
 def local_print():
@@ -14,12 +20,14 @@ def local_print():
     f.close()
 
 
-def file_assemble():
+def file_assemble(locale='outside'):
     hosts_head = """
 127.0.0.1\t\t\tlocalhost
 108.166.117.174\trs01od\t\trs01.open-dance.net
 166.78.157.47\trs02\t\trs02.infra.opnreg.com
 166.78.191.177\trs03\t\trs03.infra.opnreg.com
+10.252.71.134\taws01.pub.openreg.local
+10.252.86.209\taws02.pub.openreg.local
 """
     hosts_body = ''
 
@@ -38,13 +46,17 @@ ff02::3 ip6-allhosts
 
     instances = [i for r in reservations for i in r.instances]
 
-    print instances
-
     for i in instances:
         ## Make sure we actually have names, otherwise named freaks out.
         if i.public_dns_name:
-            print "adding %s to hosts config" % i.tags['Name']
-            fqdn = i.tags['Name'] + '.infra.opnreg.com'
-            hosts_body += "%s\t%s\t\t%s\n" % (i.ip_address, i.tags['Name'], fqdn)
+            #print "adding %s to hosts config" % i.tags['Name']
+            #fqdn = i.tags['Name'] + '.infra.opnreg.com'
+
+            if locale == 'outside':
+                address = i.ip_address
+            else:
+                address = i.private_ip_address
+
+            hosts_body += "%s\t%s\n" % (address, i.tags['Name'])
 
     return hosts_head + hosts_body + hosts_foot

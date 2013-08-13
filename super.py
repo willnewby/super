@@ -31,15 +31,16 @@ elif args.action == 'push_aws':
     deploy.app()
 
 elif args.action == 'update-one':
-    ## Rewrite the hosts file to verify correctness
-    hosts.file_print()
 
-    ## Call to fabric to deploy necessary app code onto everyone
-    deploy.app(args.number)
+    node_dict = args.type.split('_')
+    new_instance = "%s%s.infra.opnreg.com" % (node_dict[1], args.number)
 
-    ## Run state.highstate to bring everyone up to config status
-    call(['salt', '*', 'state.highstate'])
-
+    ## Rewrite Hosts File
+    hosts.recreate()
+    ## Deploy Salt Configs
+    deploy.config(new_instance)
+    ## Call to fabric to deploy necessary app code onto new minion
+    deploy.app(new_instance)
 
 elif args.action == 'update-all':
     ## Rewrite the hosts file to verify correctness
@@ -52,7 +53,7 @@ elif args.action == 'update-all':
     call(['salt', '*', 'state.highstate'])
 
 elif args.action == 'hosts':
-    hosts.file_print()
+    hosts.recreate()
 
 else:
     ## If our arguement doesn't actually match anything,
