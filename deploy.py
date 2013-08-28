@@ -3,14 +3,23 @@
 from fabric.api import run, env, cd, settings
 from subprocess import call
 from sys import exit
+from time import sleep
 import hosts
+import cache
 
 def config(new_instance='*'):
     ## Run state.highstate to bring the new instance up to config status
     call(['salt', new_instance, 'state.highstate'])
 
 
-def app(target, branch='master', force=False):
+def app(target='all', branch='master', force=False):
+    if target == 'all':
+        for i in cache.get_hosts('dns'):
+            push(i, branch, force)            
+    else:
+        push(target, branch, force)
+
+def push(target, branch='master', force=False):
     env.user = 'root'
     env.forward_agent = True
 
@@ -36,21 +45,24 @@ def node(new_instance_num, node_type='base_aws'):
     hosts.recreate()
     ## Deploy Salt Configs
     config(new_instance)
+    ## Sleep waiting for salt to finish
+    sleep(60)
     ## Call to fabric to deploy necessary app code onto new minion
     app(new_instance)
     ## Running a second deploy to cleanup anything left-over
     config(new_instance)
 
     ## Run an apache restart and anything else we need to cleanup pre-launch
-    cleanup()
+    cleanup(new_instance)
 
     ## TODO: insert LB call here
 
 
-def cleanup():
+def cleanup(target):
     env.user = 'root'
     env.forward_agent = True
-    run('service apache2 restart')
+    with settings(host_string=target):
+        run('service apache2 restart')
 
 
 def destroy_node(del_instance_num):

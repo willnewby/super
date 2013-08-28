@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 from boto import ec2
+import cache
 
 def recreate():
-    print 'Rebuilding hosts files'
+    print 'Rebuilding hosts files from API'
+    cache.save_hosts()
     ## Rewrite ALL the Hosts Files
     file_print('inside')
     file_print('outside')
@@ -41,22 +43,17 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 """
-    ec2conn = ec2.connect_to_region("us-west-2")
-    reservations = ec2conn.get_all_instances()
-
-    instances = [i for r in reservations for i in r.instances]
-
-    for i in instances:
+    for k,v in cache.get_hosts().iteritems():
         ## Make sure we actually have names, otherwise named freaks out.
-        if i.public_dns_name:
+        if v['public_dns_name']:
             #print "adding %s to hosts config" % i.tags['Name']
             #fqdn = i.tags['Name'] + '.infra.opnreg.com'
 
             if locale == 'outside':
-                address = i.ip_address
+                address = v['public_ip_address']
             else:
-                address = i.private_ip_address
+                address = v['private_ip_address']
 
-            hosts_body += "%s\t%s\n" % (address, i.tags['Name'])
+            hosts_body += "%s\t%s\n" % (v['public_ip_address'], v['fqdn'])
 
     return hosts_head + hosts_body + hosts_foot
